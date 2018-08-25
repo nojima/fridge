@@ -6,9 +6,9 @@ extern crate serde_derive;
 extern crate log;
 extern crate env_logger;
 
+mod command;
 mod server;
 mod wal;
-mod command;
 
 use std::error::Error;
 use std::fs::File;

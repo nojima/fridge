@@ -1,7 +1,7 @@
-use std::error::Error;
-use std::io::{BufRead, BufReader, Write, BufWriter};
-use std::net::{SocketAddr, TcpListener, TcpStream};
 use command::parse;
+use std::error::Error;
+use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 
 pub struct Server {
     addr: SocketAddr,

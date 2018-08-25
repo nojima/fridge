@@ -14,7 +14,7 @@ type ParseResult<T> = Result<T, ParseError>;
 pub fn parse(s: &str) -> ParseResult<Command> {
     let words: Vec<&str> = s.split(' ').collect();
     if words.len() < 1 {
-        return Err(ParseError::new("Command name is missing".to_string()))
+        return Err(ParseError::new("Command name is missing".to_string()));
     }
     let command_name = words[0];
 
@@ -23,7 +23,9 @@ pub fn parse(s: &str) -> ParseResult<Command> {
             if words.len() != 2 {
                 return Err(ParseError::new("`read` takes 1 argument".to_string()));
             }
-            Ok(Command::Read { key: words[1].to_string() })
+            Ok(Command::Read {
+                key: words[1].to_string(),
+            })
         }
         "write" => {
             if words.len() != 3 {
@@ -46,9 +48,10 @@ pub fn parse(s: &str) -> ParseResult<Command> {
             }
             Ok(Command::Rollback)
         }
-        _ => {
-            Err(ParseError::new(format!("Unknown command: {}", command_name)))
-        }
+        _ => Err(ParseError::new(format!(
+            "Unknown command: {}",
+            command_name
+        ))),
     }
 }
 
