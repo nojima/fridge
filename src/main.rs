@@ -8,6 +8,7 @@ extern crate env_logger;
 
 mod server;
 mod wal;
+mod command;
 
 use std::error::Error;
 use std::fs::File;
