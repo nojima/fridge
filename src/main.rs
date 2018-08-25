@@ -6,16 +6,15 @@ extern crate serde_derive;
 extern crate log;
 extern crate env_logger;
 
-mod wal;
 mod server;
+mod wal;
 
 use std::error::Error;
 use std::fs::File;
 use std::net::SocketAddr;
 
 fn setup_logger() {
-    let env = env_logger::Env::default()
-        .filter_or(env_logger::DEFAULT_FILTER_ENV, "info");
+    let env = env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info");
     env_logger::Builder::from_env(env).init();
 }
 

@@ -1,9 +1,9 @@
-use std::io::Read;
-use std::net::{TcpListener, TcpStream, SocketAddr};
 use std::error::Error;
+use std::io::Read;
+use std::net::{SocketAddr, TcpListener, TcpStream};
 
 pub struct Server {
-    addr: SocketAddr
+    addr: SocketAddr,
 }
 
 impl Server {

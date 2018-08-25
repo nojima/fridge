@@ -1,12 +1,18 @@
-use std::error::Error;
-use std::io::Write;
-use std::fs::File;
 use serde_json;
+use std::error::Error;
+use std::fs::File;
+use std::io::Write;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WalEntry {
-    Write { transaction_id: u64, key: String, value: String },
-    Commit { transaction_id: u64 }
+    Write {
+        transaction_id: u64,
+        key: String,
+        value: String,
+    },
+    Commit {
+        transaction_id: u64,
+    },
 }
 
 pub struct WalWriter {
