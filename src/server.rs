@@ -1,6 +1,7 @@
 use std::error::Error;
-use std::io::Read;
+use std::io::{BufRead, BufReader, Write, BufWriter};
 use std::net::{SocketAddr, TcpListener, TcpStream};
+use command::parse;
 
 pub struct Server {
     addr: SocketAddr,
@@ -24,13 +25,27 @@ impl Server {
         Ok(())
     }
 
-    fn handle_stream(&self, mut stream: TcpStream) -> Result<(), Box<Error>> {
+    fn handle_stream(&self, stream: TcpStream) -> Result<(), Box<Error>> {
         info!("Connected: peer={}", stream.peer_addr()?);
 
-        let mut buffer = String::new();
-        stream.read_to_string(&mut buffer)?;
+        let reader = BufReader::new(stream.try_clone()?);
+        let mut writer = BufWriter::new(stream);
 
-        info!("Client sent: {}", buffer);
+        for opt_line in reader.lines() {
+            let line = opt_line?;
+            match parse(&line) {
+                Ok(command) => {
+                    info!("Command: {:?}", command);
+                    write!(writer, "OK: {:?}\n", command)?;
+                    writer.flush()?;
+                }
+                Err(e) => {
+                    info!("{}", e);
+                    write!(writer, "ERROR: {}\n", e)?;
+                    writer.flush()?;
+                }
+            }
+        }
 
         Ok(())
     }
