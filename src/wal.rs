@@ -17,11 +17,11 @@ pub enum WalEntry {
     },
 }
 
-pub struct WalWriter {
+pub struct Wal {
     file: File,
 }
 
-impl WalWriter {
+impl Wal {
     pub fn open(path: &Path) -> Result<Self, Box<Error>> {
         let file = OpenOptions::new()
             .read(true)
@@ -32,7 +32,7 @@ impl WalWriter {
     }
 }
 
-impl WalWriter {
+impl Wal {
     pub fn write(&mut self, entry: &WalEntry) -> Result<(), Box<Error>> {
         let mut encoded = serde_json::to_vec(entry)?;
         encoded.push(b'\n');

@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<Error>> {
     };
 
     let path = &Path::new("/tmp/wal.txt");
-    let mut wal_writer = wal::WalWriter::open(path)?;
+    let mut wal_writer = wal::Wal::open(path)?;
     wal_writer.write(&entry1)?;
     wal_writer.write(&entry2)?;
 
