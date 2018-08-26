@@ -1,9 +1,9 @@
-use std::path::Path;
-use std::fs::OpenOptions;
 use serde_json;
 use std::error::Error;
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::Write;
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WalEntry {

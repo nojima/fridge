@@ -7,12 +7,13 @@ extern crate log;
 extern crate env_logger;
 
 mod command;
+mod database;
 mod server;
 mod wal;
 
 use std::error::Error;
-use std::path::Path;
 use std::net::SocketAddr;
+use std::path::Path;
 
 fn setup_logger() {
     let env = env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info");
@@ -22,22 +23,11 @@ fn setup_logger() {
 fn main() -> Result<(), Box<Error>> {
     setup_logger();
 
-    let entry1 = wal::WalEntry::Write {
-        transaction_id: 100,
-        key: "hello".to_string(),
-        value: "world".to_string(),
-    };
-    let entry2 = wal::WalEntry::Commit {
-        transaction_id: 101,
-    };
-
     let path = &Path::new("/tmp/wal.txt");
-    let mut wal_writer = wal::Wal::open(path)?;
-    wal_writer.write(&entry1)?;
-    wal_writer.write(&entry2)?;
+    let database = database::Database::open(path)?;
 
     let addr: SocketAddr = "0.0.0.0:5555".parse()?;
-    let s = server::Server::new(addr);
+    let mut s = server::Server::new(addr, database);
     s.listen_and_serve()?;
 
     Ok(())
