@@ -11,7 +11,7 @@ mod server;
 mod wal;
 
 use std::error::Error;
-use std::fs::File;
+use std::path::Path;
 use std::net::SocketAddr;
 
 fn setup_logger() {
@@ -31,9 +31,8 @@ fn main() -> Result<(), Box<Error>> {
         transaction_id: 101,
     };
 
-    let file = File::create("/tmp/wal.txt")?;
-
-    let mut wal_writer = wal::WalWriter::new(file);
+    let path = &Path::new("/tmp/wal.txt");
+    let mut wal_writer = wal::WalWriter::open(path)?;
     wal_writer.write(&entry1)?;
     wal_writer.write(&entry2)?;
 

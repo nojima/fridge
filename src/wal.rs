@@ -1,3 +1,5 @@
+use std::path::Path;
+use std::fs::OpenOptions;
 use serde_json;
 use std::error::Error;
 use std::fs::File;
@@ -20,8 +22,13 @@ pub struct WalWriter {
 }
 
 impl WalWriter {
-    pub fn new(file: File) -> Self {
-        Self { file }
+    pub fn open(path: &Path) -> Result<Self, Box<Error>> {
+        let file = OpenOptions::new()
+            .read(true)
+            .append(true)
+            .create(true)
+            .open(path)?;
+        Ok(Self { file })
     }
 }
 
