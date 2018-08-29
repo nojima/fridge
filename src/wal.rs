@@ -1,3 +1,4 @@
+use command::Command;
 use serde_json;
 use std::error::Error;
 use std::fs::File;
@@ -6,15 +7,9 @@ use std::io::Write;
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum WalEntry {
-    Write {
-        transaction_id: u64,
-        key: String,
-        value: String,
-    },
-    Commit {
-        transaction_id: u64,
-    },
+pub struct WalEntry {
+    pub transaction_id: u64,
+    pub command: Command,
 }
 
 pub struct Wal {
@@ -28,11 +23,9 @@ impl Wal {
             .append(true)
             .create(true)
             .open(path)?;
-        Ok(Self { file })
+        Ok(Wal { file })
     }
-}
 
-impl Wal {
     pub fn write(&mut self, entry: &WalEntry) -> Result<(), Box<Error>> {
         let mut encoded = serde_json::to_vec(entry)?;
         encoded.push(b'\n');
