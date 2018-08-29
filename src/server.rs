@@ -42,7 +42,10 @@ impl Server {
             match parse(&line) {
                 Ok(command) => {
                     info!("Command: {:?}", command);
-                    handle_command(&command, &mut transaction, &mut writer)?;
+                    let is_last = handle_command(&command, &mut transaction, &mut writer)?;
+                    if is_last {
+                        return Ok(());
+                    }
                 }
                 Err(e) => {
                     info!("{}", e);
@@ -60,13 +63,13 @@ fn handle_command(
     command: &Command,
     transaction: &mut Transaction,
     writer: &mut BufWriter<TcpStream>,
-) -> Result<(), Box<Error>> {
+) -> Result<bool, Box<Error>> {
     match command {
         Command::Write { key, value } => {
             transaction.write(key, value)?;
             write!(writer, "OK\n")?;
             writer.flush()?;
-            Ok(())
+            Ok(false)
         }
         Command::Read { key } => {
             match transaction.read(key) {
@@ -74,17 +77,18 @@ fn handle_command(
                 None => write!(writer, "NOT_FOUND\n")?,
             };
             writer.flush()?;
-            Ok(())
+            Ok(false)
         }
         Command::Commit => {
-            write!(writer, "NOT_IMPLEMENTED\n")?;
+            transaction.commit()?;
+            write!(writer, "OK\n")?;
             writer.flush()?;
-            Ok(())
+            Ok(true)
         }
         Command::Rollback => {
             write!(writer, "NOT_IMPLEMENTED\n")?;
             writer.flush()?;
-            Ok(())
+            Ok(true)
         }
     }
 }

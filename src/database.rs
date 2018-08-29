@@ -53,4 +53,12 @@ impl<'a> Transaction<'a> {
 
         Ok(())
     }
+
+    pub fn commit(&mut self) -> Result<(), Box<Error>> {
+        self.database.wal.write(&WalEntry {
+            transaction_id: self.transaction_id,
+            command: Command::Commit,
+        })?;
+        Ok(())
+    }
 }
