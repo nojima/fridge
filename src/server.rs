@@ -17,6 +17,8 @@ impl Server {
     }
 
     pub fn listen_and_serve(&mut self) -> Result<(), Box<Error>> {
+        self.database.recover()?;
+
         let listener = TcpListener::bind(self.addr)?;
         info!("Server start: addr={}", self.addr);
 
