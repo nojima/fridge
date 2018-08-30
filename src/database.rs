@@ -23,7 +23,8 @@ impl Database {
 
     pub fn recover(&mut self) -> Result<(), Box<Error>> {
         let mut volatile_map = BTreeMap::new();
-        while let Some(entry) = self.wal_reader.read()? {
+        let mut last_commit_position = 0;
+        while let (Some(entry), position) = self.wal_reader.read()? {
             match entry.command {
                 Command::Write { key, value } => {
                     volatile_map.insert(key.to_string(), value.to_string());
@@ -33,12 +34,14 @@ impl Database {
                         self.write_to_memory(&key, &value);
                     }
                     volatile_map.clear();
+                    last_commit_position = position
                 }
                 _ => {
                     panic!("BUG: should not be happen");
                 }
             }
         }
+        self.wal_reader.truncate(last_commit_position)?;
         Ok(())
     }
 

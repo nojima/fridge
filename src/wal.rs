@@ -19,7 +19,6 @@ pub struct WalWriter {
 impl WalWriter {
     pub fn open(path: &Path) -> Result<Self, Box<Error>> {
         let file = OpenOptions::new()
-            .read(true)
             .append(true)
             .create(true)
             .open(path)?;
@@ -37,24 +36,36 @@ impl WalWriter {
 
 pub struct WalReader {
     reader: BufReader<File>,
+    position: u64,
 }
 
 impl WalReader {
     pub fn open(path: &Path) -> Result<Self, Box<Error>> {
-        let file = File::open(path)?;
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(path)?;
         Ok(WalReader {
             reader: BufReader::new(file),
+            position: 0,
         })
     }
 
-    pub fn read(&mut self) -> Result<Option<WalEntry>, Box<Error>> {
+    pub fn read(&mut self) -> Result<(Option<WalEntry>, u64), Box<Error>> {
         let mut line = String::new();
         let len = self.reader.read_line(&mut line)?;
+        self.position += len as u64;
         if len == 0 {
-            Ok(None)
+            Ok((None, self.position))
         } else {
             let entry: WalEntry = serde_json::from_str(&line)?;
-            Ok(Some(entry))
+            Ok((Some(entry), self.position))
         }
+    }
+
+    pub fn truncate(&mut self, length: u64) -> Result<(), Box<Error>> {
+        let file = self.reader.get_mut();
+        file.set_len(length)?;
+        Ok(())
     }
 }
