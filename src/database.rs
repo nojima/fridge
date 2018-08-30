@@ -24,6 +24,7 @@ impl Database {
     pub fn recover(&mut self) -> Result<(), Box<Error>> {
         let mut volatile_map = BTreeMap::new();
         let mut last_commit_position = 0;
+        // TODO: WALが最後まで書けてなくて途中で読めなくなった場合に対応する
         while let (Some(entry), position) = self.wal_reader.read()? {
             match entry.command {
                 Command::Write { key, value } => {
@@ -85,6 +86,7 @@ impl<'a> Transaction<'a> {
     }
 
     pub fn commit(&mut self) -> Result<(), Box<Error>> {
+        // TODO: WALを書いている途中にエラーになったらどうするべきか考える
         for (key, value) in self.volatile_map.iter() {
             self.database.wal_writer.write(&WalEntry {
                 transaction_id: self.transaction_id,
