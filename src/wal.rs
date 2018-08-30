@@ -12,18 +12,18 @@ pub struct WalEntry {
     pub command: Command,
 }
 
-pub struct Wal {
+pub struct WalWriter {
     file: File,
 }
 
-impl Wal {
+impl WalWriter {
     pub fn open(path: &Path) -> Result<Self, Box<Error>> {
         let file = OpenOptions::new()
             .read(true)
             .append(true)
             .create(true)
             .open(path)?;
-        Ok(Wal { file })
+        Ok(WalWriter { file })
     }
 
     pub fn write(&mut self, entry: &WalEntry) -> Result<(), Box<Error>> {

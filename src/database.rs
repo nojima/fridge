@@ -2,12 +2,12 @@ use command::Command;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::path::Path;
-use wal::{Wal, WalEntry, WalReader};
+use wal::{WalWriter, WalEntry, WalReader};
 
 pub struct Database {
     map: BTreeMap<String, String>,
     wal_reader: WalReader,
-    wal: Wal,
+    wal_writer: WalWriter,
     next_transaction_id: u64,
 }
 
@@ -15,7 +15,7 @@ impl Database {
     pub fn open(wal_path: &Path) -> Result<Self, Box<Error>> {
         Ok(Self {
             map: BTreeMap::new(),
-            wal: Wal::open(wal_path)?,
+            wal_writer: WalWriter::open(wal_path)?,
             wal_reader: WalReader::open(wal_path)?,
             next_transaction_id: 1,
         })
@@ -68,7 +68,7 @@ impl<'a> Transaction<'a> {
     }
 
     pub fn write(&mut self, key: &str, value: &str) -> Result<(), Box<Error>> {
-        self.database.wal.write(&WalEntry {
+        self.database.wal_writer.write(&WalEntry {
             transaction_id: self.transaction_id,
             command: Command::Write {
                 key: key.to_string(),
@@ -82,7 +82,7 @@ impl<'a> Transaction<'a> {
     }
 
     pub fn commit(&mut self) -> Result<(), Box<Error>> {
-        self.database.wal.write(&WalEntry {
+        self.database.wal_writer.write(&WalEntry {
             transaction_id: self.transaction_id,
             command: Command::Commit,
         })?;
