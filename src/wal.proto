@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+message WriteCommand {
+    string key = 1;
+    string value = 2;
+}
+
+message CommitCommand {}
+
+message WalRecord {
+    oneof command {
+        WriteCommand write_command = 1;
+        CommitCommand commit_command = 2;
+    }
+}
