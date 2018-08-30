@@ -2,7 +2,7 @@ use command::Command;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::path::Path;
-use wal::{WalWriter, WalEntry, WalReader};
+use wal::{WalEntry, WalReader, WalWriter};
 
 pub struct Database {
     map: BTreeMap<String, String>,
@@ -22,13 +22,17 @@ impl Database {
     }
 
     pub fn recover(&mut self) -> Result<(), Box<Error>> {
+        let mut volatile_map = BTreeMap::new();
         while let Some(entry) = self.wal_reader.read()? {
             match entry.command {
                 Command::Write { key, value } => {
-                    self.write_to_memory(&key, &value);
+                    volatile_map.insert(key.to_string(), value.to_string());
                 }
                 Command::Commit => {
-                    // TODO: should implement when support atomicity
+                    for (key, value) in volatile_map.iter() {
+                        self.write_to_memory(&key, &value);
+                    }
+                    volatile_map.clear();
                 }
                 _ => {
                     panic!("BUG: should not be happen");
@@ -45,6 +49,7 @@ impl Database {
         Transaction {
             transaction_id,
             database: self,
+            volatile_map: BTreeMap::new(),
         }
     }
 
@@ -60,32 +65,41 @@ impl Database {
 pub struct Transaction<'a> {
     transaction_id: u64,
     database: &'a mut Database,
+    volatile_map: BTreeMap<String, String>,
 }
 
 impl<'a> Transaction<'a> {
     pub fn read(&mut self, key: &str) -> Option<String> {
-        self.database.read_from_memory(key)
+        match self.volatile_map.get(key) {
+            None => self.database.read_from_memory(key),
+            Some(value) => Some(value.to_string()),
+        }
     }
 
     pub fn write(&mut self, key: &str, value: &str) -> Result<(), Box<Error>> {
-        self.database.wal_writer.write(&WalEntry {
-            transaction_id: self.transaction_id,
-            command: Command::Write {
-                key: key.to_string(),
-                value: value.to_string(),
-            },
-        })?;
-
-        self.database.write_to_memory(key, value);
-
+        self.volatile_map.insert(key.to_string(), value.to_string());
         Ok(())
     }
 
     pub fn commit(&mut self) -> Result<(), Box<Error>> {
+        for (key, value) in self.volatile_map.iter() {
+            self.database.wal_writer.write(&WalEntry {
+                transaction_id: self.transaction_id,
+                command: Command::Write {
+                    key: key.to_string(),
+                    value: value.to_string(),
+                },
+            })?;
+        }
         self.database.wal_writer.write(&WalEntry {
             transaction_id: self.transaction_id,
             command: Command::Commit,
         })?;
+
+        for (key, value) in self.volatile_map.iter() {
+            self.database.write_to_memory(key, value);
+        }
+
         Ok(())
     }
 }

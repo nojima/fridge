@@ -88,7 +88,7 @@ fn handle_command(
             Ok(true)
         }
         Command::Rollback => {
-            write!(writer, "NOT_IMPLEMENTED\n")?;
+            write!(writer, "OK\n")?;
             writer.flush()?;
             Ok(true)
         }
