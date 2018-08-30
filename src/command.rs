@@ -21,7 +21,7 @@ pub fn parse(s: &str) -> ParseResult<Command> {
     match command_name {
         "read" => {
             if words.len() != 2 {
-                return Err(ParseError::new("`read` takes 1 argument".to_string()));
+                return Err(ParseError::new("`read` takes exactly 1 argument".to_string()));
             }
             Ok(Command::Read {
                 key: words[1].to_string(),
@@ -29,7 +29,7 @@ pub fn parse(s: &str) -> ParseResult<Command> {
         }
         "write" => {
             if words.len() != 3 {
-                return Err(ParseError::new("`write` takes 2 arguments".to_string()));
+                return Err(ParseError::new("`write` takes exactly 2 arguments".to_string()));
             }
             Ok(Command::Write {
                 key: words[1].to_string(),
