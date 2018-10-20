@@ -1,18 +1,16 @@
-extern crate serde;
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate log;
-extern crate byteorder;
-extern crate env_logger;
-extern crate protobuf;
-
 mod command;
 mod database;
 mod protos;
 mod server;
 mod wal;
+
+#[macro_use] extern crate log;
+#[macro_use] extern crate serde_derive;
+extern crate byteorder;
+extern crate env_logger;
+extern crate protobuf;
+extern crate serde;
+extern crate serde_json;
 
 use std::error::Error;
 use std::net::SocketAddr;
