@@ -5,6 +5,10 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
+use protos::wal as proto;
+use protobuf::stream::CodedOutputStream;
+use protobuf::Message;
+use byteorder::{BigEndian, WriteBytesExt};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalEntry {
@@ -26,9 +30,29 @@ impl WalWriter {
     }
 
     pub fn write(&mut self, entry: &WalEntry) -> Result<(), Box<Error>> {
-        let mut encoded = serde_json::to_vec(entry)?;
-        encoded.push(b'\n');
-        self.file.write_all(&encoded)?;
+        let mut record = proto::WalRecord::new();
+        match entry.command {
+            Command::Write{ref key, ref value} => {
+                let mut command = proto::WriteCommand::new();
+                command.set_key(key.to_string());
+                command.set_value(value.to_string());
+                record.set_write_command(command);
+            }
+            Command::Commit => {
+                let mut command = proto::CommitCommand::new();
+                record.set_commit_command(command);
+            }
+            _ => {
+                panic!("BUG: this kind of command cannot be written in WAL: {:?}", entry.command);
+            }
+        }
+
+        let mut buffer = vec![];
+        record.write_to_writer(&mut buffer)?;
+
+        self.file.write_u32::<BigEndian>(buffer.len() as u32)?;
+        self.file.write(&buffer[..])?;
+
         self.file.sync_data()?;
         Ok(())
     }
