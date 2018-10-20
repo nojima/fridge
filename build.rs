@@ -1,7 +1,7 @@
 extern crate protoc_rust;
 
-use std::error::Error;
 use protoc_rust::Customize;
+use std::error::Error;
 
 fn main() -> Result<(), Box<Error>> {
     protoc_rust::run(protoc_rust::Args {

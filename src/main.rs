@@ -4,15 +4,15 @@ extern crate serde_json;
 extern crate serde_derive;
 #[macro_use]
 extern crate log;
+extern crate byteorder;
 extern crate env_logger;
 extern crate protobuf;
-extern crate byteorder;
 
 mod command;
 mod database;
+mod protos;
 mod server;
 mod wal;
-mod protos;
 
 use std::error::Error;
 use std::net::SocketAddr;
@@ -26,7 +26,7 @@ fn setup_logger() {
 fn main() -> Result<(), Box<Error>> {
     setup_logger();
 
-    let path = &Path::new("/tmp/wal-v2.txt");
+    let path = &Path::new("/tmp/wal-v2.bin");
     let database = database::Database::open(path)?;
 
     let addr: SocketAddr = "0.0.0.0:5555".parse()?;
