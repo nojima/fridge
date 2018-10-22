@@ -6,7 +6,6 @@ use command::Command;
 use crc::{crc64, Hasher64};
 use protobuf::Message;
 use protos::wal as proto;
-use std::error::Error;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path;
@@ -22,12 +21,12 @@ pub struct WalWriter {
 }
 
 impl WalWriter {
-    pub fn open(path: &path::Path) -> Result<Self, Box<Error>> {
+    pub fn open(path: &path::Path) -> io::Result<Self> {
         let file = fs::OpenOptions::new().append(true).create(true).open(path)?;
         Ok(WalWriter { file })
     }
 
-    pub fn write(&mut self, entry: &WalEntry) -> Result<(), Box<Error>> {
+    pub fn write(&mut self, entry: &WalEntry) -> io::Result<()> {
         let mut record = proto::WalRecord::new();
         match entry.command {
             Command::Write { ref key, ref value } => {
@@ -143,7 +142,7 @@ impl WalReader {
         return Ok((entry, self.position));
     }
 
-    pub fn truncate(&mut self, length: u64) -> Result<(), Box<Error>> {
+    pub fn truncate(&mut self, length: u64) -> io::Result<()> {
         let file = self.reader.get_mut();
         file.set_len(length)?;
         Ok(())
