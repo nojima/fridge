@@ -1,5 +1,6 @@
 pub mod error;
 
+use self::error::{IncompleteWalRecordError, WalReadError};
 use byteorder::{self, ReadBytesExt, WriteBytesExt};
 use command::Command;
 use crc::{crc64, Hasher64};
@@ -9,7 +10,6 @@ use std::error::Error;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path;
-use self::error::IncompleteWalRecordError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalEntry {
@@ -72,7 +72,7 @@ pub struct WalReader {
 }
 
 impl WalReader {
-    pub fn open(path: &path::Path) -> Result<Self, Box<Error>> {
+    pub fn open(path: &path::Path) -> io::Result<WalReader> {
         let file = fs::OpenOptions::new().read(true).write(true).open(path)?;
         Ok(WalReader {
             reader: io::BufReader::new(file),
@@ -80,7 +80,7 @@ impl WalReader {
         })
     }
 
-    pub fn read(&mut self) -> Result<(Option<WalEntry>, u64), Box<Error>> {
+    pub fn read(&mut self) -> Result<(Option<WalEntry>, u64), WalReadError> {
         let mut digest = Crc64Digest::new();
 
         let record_len = match self.reader.read_u32::<byteorder::BigEndian>() {
@@ -88,9 +88,7 @@ impl WalReader {
             Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
                 return Ok((None, self.position));
             }
-            Err(err) => {
-                return Err(Box::new(err));
-            }
+            Err(err) => return Err(From::from(err)),
         };
         digest.write_u32::<byteorder::BigEndian>(record_len)?;
         self.position += 4;
@@ -99,11 +97,9 @@ impl WalReader {
         match self.reader.read_exact(&mut buffer[..]) {
             Ok(_) => {}
             Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
-                return Err(Box::new(IncompleteWalRecordError {}));
+                return Err(From::from(IncompleteWalRecordError {}))
             }
-            Err(err) => {
-                return Err(Box::new(err));
-            }
+            Err(err) => return Err(From::from(err)),
         }
         digest.write(&buffer[..])?;
         self.position += record_len as u64;
@@ -119,7 +115,7 @@ impl WalReader {
                 sum,
                 digest.sum()
             );
-            return Err(Box::new(IncompleteWalRecordError {}));
+            return Err(From::from(IncompleteWalRecordError {}));
         }
 
         let mut record = proto::WalRecord::new();
