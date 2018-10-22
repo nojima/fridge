@@ -4,9 +4,12 @@ mod protos;
 mod server;
 mod wal;
 
-#[macro_use] extern crate log;
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate serde_derive;
 extern crate byteorder;
+extern crate crc;
 extern crate env_logger;
 extern crate protobuf;
 extern crate serde;
