@@ -5,6 +5,7 @@ use std::io;
 
 #[derive(Debug)]
 pub enum WalReadError {
+    Eof,
     IncompleteRecord(IncompleteWalRecordError),
     BrokenRecord(BrokenRecordError),
     Io(io::Error),
@@ -13,6 +14,7 @@ pub enum WalReadError {
 impl fmt::Display for WalReadError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            WalReadError::Eof => write!(f, "WalReadError: EOF"),
             WalReadError::IncompleteRecord(ref err) => write!(f, "WalReadError: {}", err),
             WalReadError::BrokenRecord(ref err) => write!(f, "WalReadError: {}", err),
             WalReadError::Io(ref err) => write!(f, "WalReadError: {}", err),
@@ -23,6 +25,7 @@ impl fmt::Display for WalReadError {
 impl Error for WalReadError {
     fn cause(&self) -> Option<&Error> {
         match *self {
+            WalReadError::Eof => None,
             WalReadError::IncompleteRecord(ref err) => Some(err),
             WalReadError::BrokenRecord(ref err) => Some(err),
             WalReadError::Io(ref err) => Some(err),

@@ -2,6 +2,7 @@ use command::Command;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::path::Path;
+use wal::error::WalReadError;
 use wal::{WalEntry, WalReader, WalWriter};
 
 pub struct Database {
@@ -25,7 +26,12 @@ impl Database {
         let mut volatile_map = BTreeMap::new();
         let mut last_commit_position = 0;
         // TODO: WALが最後まで書けてなくて途中で読めなくなった場合に対応する
-        while let (Some(entry), position) = self.wal_reader.read()? {
+        loop {
+            let (entry, position) = match self.wal_reader.read() {
+                Ok(x) => x,
+                Err(WalReadError::Eof) => break,
+                Err(err) => return Err(From::from(err)),
+            };
             match entry.command {
                 Command::Write { key, value } => {
                     volatile_map.insert(key.to_string(), value.to_string());

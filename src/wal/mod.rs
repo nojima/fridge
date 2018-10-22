@@ -80,13 +80,13 @@ impl WalReader {
         })
     }
 
-    pub fn read(&mut self) -> Result<(Option<WalEntry>, u64), WalReadError> {
+    pub fn read(&mut self) -> Result<(WalEntry, u64), WalReadError> {
         let mut digest = Crc64Digest::new();
 
         let record_len = match self.reader.read_u32::<byteorder::BigEndian>() {
             Ok(n) => n,
             Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
-                return Ok((None, self.position));
+                return Err(WalReadError::Eof);
             }
             Err(err) => return Err(From::from(err)),
         };
@@ -139,7 +139,7 @@ impl WalReader {
         } else {
             panic!("BUG: record in WAL must be write/commit command.")
         };
-        return Ok((Some(entry), self.position));
+        return Ok((entry, self.position));
     }
 
     pub fn truncate(&mut self, length: u64) -> Result<(), Box<Error>> {
