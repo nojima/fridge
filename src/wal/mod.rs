@@ -86,7 +86,7 @@ impl WalReader {
             if err.kind() == io::ErrorKind::UnexpectedEof {
                 WalReadError::Eof
             } else {
-                From::from(err)
+                WalReadError::Io(err)
             }
         })?;
 
@@ -94,13 +94,7 @@ impl WalReader {
         self.position += 4;
 
         let mut buffer = vec![0; record_len as usize];
-        self.reader.read_exact(&mut buffer[..]).map_err(|err| {
-            if err.kind() == io::ErrorKind::UnexpectedEof {
-                WalReadError::IncompleteRecord
-            } else {
-                From::from(err)
-            }
-        })?;
+        self.reader.read_exact(&mut buffer[..])?;
         digest.write(&buffer[..])?;
         self.position += record_len as u64;
 

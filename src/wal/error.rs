@@ -41,7 +41,11 @@ impl From<ProtobufError> for WalReadError {
 
 impl From<io::Error> for WalReadError {
     fn from(err: io::Error) -> WalReadError {
-        WalReadError::Io(err)
+        if err.kind() == io::ErrorKind::UnexpectedEof {
+            WalReadError::IncompleteRecord
+        } else {
+            WalReadError::Io(err)
+        }
     }
 }
 
