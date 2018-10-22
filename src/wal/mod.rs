@@ -1,13 +1,15 @@
+pub mod error;
+
 use byteorder::{self, ReadBytesExt, WriteBytesExt};
 use command::Command;
 use crc::{crc64, Hasher64};
 use protobuf::Message;
 use protos::wal as proto;
 use std::error::Error;
-use std::fmt;
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path;
+use self::error::IncompleteWalRecordError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalEntry {
@@ -148,27 +150,6 @@ impl WalReader {
         let file = self.reader.get_mut();
         file.set_len(length)?;
         Ok(())
-    }
-}
-
-// An error for partially written WAL record.
-// When this error occurrs, we should trancate WAL.
-#[derive(Debug, Clone)]
-struct IncompleteWalRecordError {}
-
-impl fmt::Display for IncompleteWalRecordError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "incomplete WAL record")
-    }
-}
-
-impl Error for IncompleteWalRecordError {
-    fn description(&self) -> &str {
-        "incomplete WAL record"
-    }
-
-    fn cause(&self) -> Option<&Error> {
-        None
     }
 }
 
