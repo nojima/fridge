@@ -1,16 +1,13 @@
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{self, ReadBytesExt, WriteBytesExt};
 use command::Command;
 use crc::{crc64, Hasher64};
 use protobuf::Message;
 use protos::wal as proto;
 use std::error::Error;
 use std::fmt;
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::io;
-use std::io::ErrorKind;
-use std::io::{BufReader, Read, Write};
-use std::path::Path;
+use std::fs;
+use std::io::{self, Read, Write};
+use std::path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalEntry {
@@ -19,12 +16,12 @@ pub struct WalEntry {
 }
 
 pub struct WalWriter {
-    file: File,
+    file: fs::File,
 }
 
 impl WalWriter {
-    pub fn open(path: &Path) -> Result<Self, Box<Error>> {
-        let file = OpenOptions::new().append(true).create(true).open(path)?;
+    pub fn open(path: &path::Path) -> Result<Self, Box<Error>> {
+        let file = fs::OpenOptions::new().append(true).create(true).open(path)?;
         Ok(WalWriter { file })
     }
 
@@ -53,13 +50,13 @@ impl WalWriter {
         let mut digest = Crc64Digest::new();
 
         let record_size = record.compute_size();
-        buffer.write_u32::<BigEndian>(record_size)?;
-        digest.write_u32::<BigEndian>(record_size)?;
+        buffer.write_u32::<byteorder::BigEndian>(record_size)?;
+        digest.write_u32::<byteorder::BigEndian>(record_size)?;
 
         record.write_to_writer(&mut buffer)?;
         record.write_to_writer(&mut digest)?;
 
-        buffer.write_u64::<BigEndian>(digest.sum())?;
+        buffer.write_u64::<byteorder::BigEndian>(digest.sum())?;
 
         self.file.write(&buffer[..])?;
         self.file.sync_data()?;
@@ -68,15 +65,15 @@ impl WalWriter {
 }
 
 pub struct WalReader {
-    reader: BufReader<File>,
+    reader: io::BufReader<fs::File>,
     position: u64,
 }
 
 impl WalReader {
-    pub fn open(path: &Path) -> Result<Self, Box<Error>> {
-        let file = OpenOptions::new().read(true).write(true).open(path)?;
+    pub fn open(path: &path::Path) -> Result<Self, Box<Error>> {
+        let file = fs::OpenOptions::new().read(true).write(true).open(path)?;
         Ok(WalReader {
-            reader: BufReader::new(file),
+            reader: io::BufReader::new(file),
             position: 0,
         })
     }
@@ -84,22 +81,22 @@ impl WalReader {
     pub fn read(&mut self) -> Result<(Option<WalEntry>, u64), Box<Error>> {
         let mut digest = Crc64Digest::new();
 
-        let record_len = match self.reader.read_u32::<BigEndian>() {
+        let record_len = match self.reader.read_u32::<byteorder::BigEndian>() {
             Ok(n) => n,
-            Err(ref err) if err.kind() == ErrorKind::UnexpectedEof => {
+            Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
                 return Ok((None, self.position));
             }
             Err(err) => {
                 return Err(Box::new(err));
             }
         };
-        digest.write_u32::<BigEndian>(record_len)?;
+        digest.write_u32::<byteorder::BigEndian>(record_len)?;
         self.position += 4;
 
         let mut buffer = vec![0; record_len as usize];
         match self.reader.read_exact(&mut buffer[..]) {
             Ok(_) => {}
-            Err(ref err) if err.kind() == ErrorKind::UnexpectedEof => {
+            Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
                 return Err(Box::new(IncompleteWalRecordError {}));
             }
             Err(err) => {
@@ -109,7 +106,7 @@ impl WalReader {
         digest.write(&buffer[..])?;
         self.position += record_len as u64;
 
-        let sum = self.reader.read_u64::<BigEndian>()?;
+        let sum = self.reader.read_u64::<byteorder::BigEndian>()?;
         self.position += 8;
 
         // Check sum
