@@ -6,7 +6,7 @@ use std::io;
 #[derive(Debug)]
 pub enum WalReadError {
     Eof,
-    IncompleteRecord(IncompleteWalRecordError),
+    IncompleteRecord,
     BrokenRecord(BrokenRecordError),
     Io(io::Error),
 }
@@ -15,7 +15,7 @@ impl fmt::Display for WalReadError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             WalReadError::Eof => write!(f, "WalReadError: EOF"),
-            WalReadError::IncompleteRecord(ref err) => write!(f, "WalReadError: {}", err),
+            WalReadError::IncompleteRecord => write!(f, "WalReadError: IncompleteRecord"),
             WalReadError::BrokenRecord(ref err) => write!(f, "WalReadError: {}", err),
             WalReadError::Io(ref err) => write!(f, "WalReadError: {}", err),
         }
@@ -26,16 +26,10 @@ impl Error for WalReadError {
     fn cause(&self) -> Option<&Error> {
         match *self {
             WalReadError::Eof => None,
-            WalReadError::IncompleteRecord(ref err) => Some(err),
+            WalReadError::IncompleteRecord => None,
             WalReadError::BrokenRecord(ref err) => Some(err),
             WalReadError::Io(ref err) => Some(err),
         }
-    }
-}
-
-impl From<IncompleteWalRecordError> for WalReadError {
-    fn from(err: IncompleteWalRecordError) -> WalReadError {
-        WalReadError::IncompleteRecord(err)
     }
 }
 
@@ -48,27 +42,6 @@ impl From<ProtobufError> for WalReadError {
 impl From<io::Error> for WalReadError {
     fn from(err: io::Error) -> WalReadError {
         WalReadError::Io(err)
-    }
-}
-
-// An error for partially written WAL record.
-// When this error occurrs, we should trancate WAL.
-#[derive(Debug)]
-pub struct IncompleteWalRecordError {}
-
-impl fmt::Display for IncompleteWalRecordError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.description())
-    }
-}
-
-impl Error for IncompleteWalRecordError {
-    fn description(&self) -> &str {
-        "incomplete WAL record"
-    }
-
-    fn cause(&self) -> Option<&Error> {
-        None
     }
 }
 

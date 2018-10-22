@@ -1,7 +1,7 @@
 pub mod error;
 
-use self::error::{IncompleteWalRecordError, WalReadError};
-use byteorder::{self, ReadBytesExt, WriteBytesExt};
+use self::error::WalReadError;
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use command::Command;
 use crc::{crc64, Hasher64};
 use protobuf::Message;
@@ -52,13 +52,13 @@ impl WalWriter {
         let mut digest = Crc64Digest::new();
 
         let record_size = record.compute_size();
-        buffer.write_u32::<byteorder::BigEndian>(record_size)?;
-        digest.write_u32::<byteorder::BigEndian>(record_size)?;
+        buffer.write_u32::<BigEndian>(record_size)?;
+        digest.write_u32::<BigEndian>(record_size)?;
 
         record.write_to_writer(&mut buffer)?;
         record.write_to_writer(&mut digest)?;
 
-        buffer.write_u64::<byteorder::BigEndian>(digest.sum())?;
+        buffer.write_u64::<BigEndian>(digest.sum())?;
 
         self.file.write(&buffer[..])?;
         self.file.sync_data()?;
@@ -83,28 +83,29 @@ impl WalReader {
     pub fn read(&mut self) -> Result<(WalEntry, u64), WalReadError> {
         let mut digest = Crc64Digest::new();
 
-        let record_len = match self.reader.read_u32::<byteorder::BigEndian>() {
-            Ok(n) => n,
-            Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
-                return Err(WalReadError::Eof);
+        let record_len = self.reader.read_u32::<BigEndian>().map_err(|err| {
+            if err.kind() == io::ErrorKind::UnexpectedEof {
+                WalReadError::Eof
+            } else {
+                From::from(err)
             }
-            Err(err) => return Err(From::from(err)),
-        };
-        digest.write_u32::<byteorder::BigEndian>(record_len)?;
+        })?;
+
+        digest.write_u32::<BigEndian>(record_len)?;
         self.position += 4;
 
         let mut buffer = vec![0; record_len as usize];
-        match self.reader.read_exact(&mut buffer[..]) {
-            Ok(_) => {}
-            Err(ref err) if err.kind() == io::ErrorKind::UnexpectedEof => {
-                return Err(From::from(IncompleteWalRecordError {}))
+        self.reader.read_exact(&mut buffer[..]).map_err(|err| {
+            if err.kind() == io::ErrorKind::UnexpectedEof {
+                WalReadError::IncompleteRecord
+            } else {
+                From::from(err)
             }
-            Err(err) => return Err(From::from(err)),
-        }
+        })?;
         digest.write(&buffer[..])?;
         self.position += record_len as u64;
 
-        let sum = self.reader.read_u64::<byteorder::BigEndian>()?;
+        let sum = self.reader.read_u64::<BigEndian>()?;
         self.position += 8;
 
         // Check sum
@@ -115,7 +116,7 @@ impl WalReader {
                 sum,
                 digest.sum()
             );
-            return Err(From::from(IncompleteWalRecordError {}));
+            return Err(WalReadError::IncompleteRecord);
         }
 
         let mut record = proto::WalRecord::new();
