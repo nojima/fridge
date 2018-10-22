@@ -25,11 +25,20 @@ impl Database {
     pub fn recover(&mut self) -> Result<(), Box<Error>> {
         let mut volatile_map = BTreeMap::new();
         let mut last_commit_position = 0;
-        // TODO: WALが最後まで書けてなくて途中で読めなくなった場合に対応する
+
         loop {
             let (entry, position) = match self.wal_reader.read() {
                 Ok(x) => x,
-                Err(WalReadError::Eof) => break,
+                Err(WalReadError::Eof) => {
+                    info!("Successfully applied the WAL. Remove uncommited log entries: last_commit_position={}", last_commit_position);
+                    self.wal_reader.truncate(last_commit_position)?;
+                    break;
+                }
+                Err(WalReadError::IncompleteRecord) => {
+                    error!("WAL has incomplete record. Truncate the log to the last commit position: last_commit_position={}", last_commit_position);
+                    self.wal_reader.truncate(last_commit_position)?;
+                    break;
+                }
                 Err(err) => return Err(From::from(err)),
             };
             match entry.command {
@@ -48,7 +57,7 @@ impl Database {
                 }
             }
         }
-        self.wal_reader.truncate(last_commit_position)?;
+
         Ok(())
     }
 
