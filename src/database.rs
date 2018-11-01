@@ -1,4 +1,5 @@
 use command::Command;
+use log::{error, info};
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::path::Path;

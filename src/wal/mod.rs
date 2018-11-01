@@ -4,8 +4,10 @@ use self::error::WalReadError;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use command::Command;
 use crc::{crc64, Hasher64};
+use log::error;
 use protobuf::Message;
 use protos::wal as proto;
+use serde_derive::{Deserialize, Serialize};
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path;
@@ -22,7 +24,10 @@ pub struct WalWriter {
 
 impl WalWriter {
     pub fn open(path: &path::Path) -> io::Result<Self> {
-        let file = fs::OpenOptions::new().append(true).create(true).open(path)?;
+        let file = fs::OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(path)?;
         Ok(WalWriter { file })
     }
 
