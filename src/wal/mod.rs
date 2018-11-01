@@ -4,7 +4,7 @@ use self::error::WalReadError;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use command::Command;
 use crc::{crc64, Hasher64};
-use log::error;
+use log::warn;
 use protobuf::Message;
 use protos::wal as proto;
 use serde_derive::{Deserialize, Serialize};
@@ -108,7 +108,7 @@ impl WalReader {
 
         // Check sum
         if digest.sum() != sum {
-            error!(
+            warn!(
                 "Invalid check sum: position={}, recorded={}, calculated={}",
                 self.position,
                 sum,

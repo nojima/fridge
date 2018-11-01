@@ -1,6 +1,6 @@
 use command::Command;
 use failure::Error;
-use log::{error, info};
+use log::{info, warn};
 use std::collections::BTreeMap;
 use std::path::Path;
 use wal::error::WalReadError;
@@ -36,7 +36,7 @@ impl Database {
                     break;
                 }
                 Err(WalReadError::IncompleteRecord) => {
-                    error!("WAL has incomplete record. Truncate the log to the last commit position: last_commit_position={}", last_commit_position);
+                    warn!("WAL has incomplete record. Truncate the log to the last commit position: last_commit_position={}", last_commit_position);
                     self.wal_reader.truncate(last_commit_position)?;
                     break;
                 }
