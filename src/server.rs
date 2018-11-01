@@ -3,7 +3,7 @@ use command::Command;
 use database::Database;
 use database::Transaction;
 use log::{error, info};
-use std::error::Error;
+use failure::Error;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 
@@ -17,7 +17,7 @@ impl Server {
         Self { addr, database }
     }
 
-    pub fn listen_and_serve(&mut self) -> Result<(), Box<Error>> {
+    pub fn listen_and_serve(&mut self) -> Result<(), Error> {
         self.database.recover()?;
 
         let listener = TcpListener::bind(self.addr)?;
@@ -32,7 +32,7 @@ impl Server {
         Ok(())
     }
 
-    fn handle_stream(&mut self, stream: TcpStream) -> Result<(), Box<Error>> {
+    fn handle_stream(&mut self, stream: TcpStream) -> Result<(), Error> {
         info!("Connected: peer={}", stream.peer_addr()?);
 
         let reader = BufReader::new(stream.try_clone()?);
@@ -66,7 +66,7 @@ fn handle_command(
     command: &Command,
     transaction: &mut Transaction,
     writer: &mut BufWriter<TcpStream>,
-) -> Result<bool, Box<Error>> {
+) -> Result<bool, Error> {
     match command {
         Command::Write { key, value } => {
             transaction.write(key, value)?;

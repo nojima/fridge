@@ -1,10 +1,10 @@
 use command::Command;
 use log::{error, info};
 use std::collections::BTreeMap;
-use std::error::Error;
 use std::path::Path;
 use wal::error::WalReadError;
 use wal::{WalEntry, WalReader, WalWriter};
+use failure::Error;
 
 pub struct Database {
     map: BTreeMap<String, String>,
@@ -14,7 +14,7 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn open(wal_path: &Path) -> Result<Self, Box<Error>> {
+    pub fn open(wal_path: &Path) -> Result<Self, Error> {
         Ok(Self {
             map: BTreeMap::new(),
             wal_writer: WalWriter::open(wal_path)?,
@@ -23,7 +23,7 @@ impl Database {
         })
     }
 
-    pub fn recover(&mut self) -> Result<(), Box<Error>> {
+    pub fn recover(&mut self) -> Result<(), Error> {
         let mut volatile_map = BTreeMap::new();
         let mut last_commit_position = 0;
 
@@ -96,12 +96,12 @@ impl<'a> Transaction<'a> {
         }
     }
 
-    pub fn write(&mut self, key: &str, value: &str) -> Result<(), Box<Error>> {
+    pub fn write(&mut self, key: &str, value: &str) -> Result<(), Error> {
         self.volatile_map.insert(key.to_string(), value.to_string());
         Ok(())
     }
 
-    pub fn commit(&mut self) -> Result<(), Box<Error>> {
+    pub fn commit(&mut self) -> Result<(), Error> {
         // TODO: WALを書いている途中にエラーになったらどうするべきか考える
         for (key, value) in self.volatile_map.iter() {
             self.database.wal_writer.write(&WalEntry {

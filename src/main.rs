@@ -7,22 +7,24 @@ mod wal;
 extern crate byteorder;
 extern crate crc;
 extern crate env_logger;
+extern crate failure;
+#[macro_use] extern crate failure_derive;
 extern crate log;
 extern crate protobuf;
 extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-use std::error::Error;
 use std::net::SocketAddr;
 use std::path::Path;
+use failure::Error;
 
 fn setup_logger() {
     let env = env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info");
     env_logger::Builder::from_env(env).init();
 }
 
-fn main() -> Result<(), Box<Error>> {
+fn main() -> Result<(), Error> {
     setup_logger();
 
     let path = &Path::new("/tmp/wal-v2.bin");
