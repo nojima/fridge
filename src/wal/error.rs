@@ -1,6 +1,6 @@
+use failure::Fail;
 use protobuf::error::ProtobufError;
 use std::io;
-use failure::Fail;
 
 #[derive(Fail, Debug)]
 pub enum WalReadError {

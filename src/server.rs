@@ -2,8 +2,8 @@ use command::parse;
 use command::Command;
 use database::Database;
 use database::Transaction;
-use log::{error, info};
 use failure::Error;
+use log::{error, info};
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 

@@ -1,10 +1,10 @@
 use command::Command;
+use failure::Error;
 use log::{error, info};
 use std::collections::BTreeMap;
 use std::path::Path;
 use wal::error::WalReadError;
 use wal::{WalEntry, WalReader, WalWriter};
-use failure::Error;
 
 pub struct Database {
     map: BTreeMap<String, String>,
