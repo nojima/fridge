@@ -1,4 +1,5 @@
 mod command;
+mod command_parser;
 mod database;
 mod protos;
 mod server;

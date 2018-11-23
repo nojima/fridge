@@ -1,5 +1,5 @@
-use command::parse;
 use command::Command;
+use command_parser::parse;
 use database::Database;
 use database::Transaction;
 use failure::Error;
