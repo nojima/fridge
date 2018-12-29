@@ -41,7 +41,7 @@ impl WalWriter {
                 record.set_write_command(command);
             }
             Command::Commit => {
-                let mut command = proto::CommitCommand::new();
+                let command = proto::CommitCommand::new();
                 record.set_commit_command(command);
             }
             _ => {
