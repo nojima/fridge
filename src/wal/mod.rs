@@ -2,11 +2,11 @@ pub mod error;
 
 use self::error::WalReadError;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use command::Command;
+use crate::command::Command;
 use crc::{crc64, Hasher64};
 use log::warn;
 use protobuf::Message;
-use protos::wal as proto;
+use crate::protos::wal as proto;
 use serde_derive::{Deserialize, Serialize};
 use std::fs;
 use std::io::{self, Read, Write};

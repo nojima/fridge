@@ -9,7 +9,6 @@ extern crate byteorder;
 extern crate crc;
 extern crate env_logger;
 extern crate failure;
-#[macro_use]
 extern crate failure_derive;
 extern crate log;
 extern crate protobuf;

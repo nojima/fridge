@@ -1,10 +1,10 @@
-use command::Command;
+use crate::command::Command;
 use failure::Error;
 use log::{info, warn};
 use std::collections::BTreeMap;
 use std::path::Path;
-use wal::error::WalReadError;
-use wal::{WalEntry, WalReader, WalWriter};
+use crate::wal::error::WalReadError;
+use crate::wal::{WalEntry, WalReader, WalWriter};
 
 pub struct Database {
     map: BTreeMap<String, String>,

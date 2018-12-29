@@ -1,4 +1,4 @@
-use command::Command;
+use crate::command::Command;
 use std::error::Error;
 use std::fmt;
 
